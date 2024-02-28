@@ -29,7 +29,7 @@ def predict_image():
             print(pred)
             # prediction = str(model.predict(rsimg.reshape(1, -1))[0])
             res = "Prediction : The given image is "+labels[pred]
-            return res
+            return render_template("prediction.html",text=res)
         except Exception as e:
             print("can not able to resize the image :(")
             return "can not able to resize the image :("
