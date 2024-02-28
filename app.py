@@ -1,68 +1,43 @@
-from __future__ import division, print_function
-import os
+import cv2
+import pandas as pd
 import numpy as np
-
-from flask import Flask, request, render_template
-from werkzeug.utils import secure_filename
-
-
-from PIL import Image
-import tensorflow as tf
-
-
-def names(number):
-    if number == 0:
-        return 'Its a Tumor'
-    else:
-        return 'No, Its not a tumor'
-
-
-# labels = ['No', 'Yes']
-model = tf.keras.models.load_model(
-    r"C:\Users\Aryan\FLASK\brain_tumor_detection_model.h5")
-
-
+import pickle
+from flask import Flask, render_template, url_for, request, app, jsonify
 app = Flask(__name__)
 
+from tensorflow.keras.models import load_model
 
-@app.route('/')
+model = load_model("cnnmodel.h5")
+
+labels = ['airplane', 'car', 'cat', 'dog', 'flower', 'fruit', 'motorbike',
+       'person']
+
+@app.route("/")
 def home():
-    return render_template('index.html')
+    return render_template("home.html")
 
 
-@app.route('/predict', methods=['GET', 'POST'])
-def predict():
-    '''
-    For rendering results on HTML GUI
-    '''
-    if request.method == 'POST':
+@app.route("/predict2",methods=["GET","POST"])
+def predict_image():
+    file = request.files['image'] 
+    filename = file.filename
+    if str(filename).strip():
+        imgData = cv2.imread(filename)
+        rsimg = cv2.resize(imgData, (32, 32))
+        pred = np.argmax(model.predict(np.expand_dims(rsimg,axis=0)))
+        try:
+            print(pred)
+            # prediction = str(model.predict(rsimg.reshape(1, -1))[0])
+            res = "Prediction : The given image is "+labels[pred]
+            return res
+        except Exception as e:
+            print("can not able to resize the image :(")
+            return "can not able to resize the image :("
 
-        f = request.files['image']
-
-        basepath = os.path.dirname(__file__)
-        file_path = os.path.join(
-            basepath, 'uploads', secure_filename(f.filename))
-        f.save(file_path)
-
-        img = Image.open(file_path)
-        img = np.array(img.resize((128, 128)))
-
-        img = img.reshape(1, 128, 128, 3)
-
-        prediction = model.predict_on_batch(img)
-
-        classification = np.where(prediction == np.amax(prediction))[1][0]
-
-    return render_template('pridiction.html', prediction_text=f"{prediction[0][classification]*100:.4f}% Confidence This Is {names(classification)}")
+    else:
+        return render_template("home.html")
 
 
-@app.route('/PredictAgain', methods=['POST'])
-def PredictAgain():
-    '''
-    For rendering results on HTML GUI
-    '''
-
-    return render_template('index.html')
 
 if __name__ == "__main__":
     app.run(debug=True)
