@@ -26,13 +26,11 @@ def predict_image():
         rsimg = cv2.resize(imgData, (32, 32))
         pred = np.argmax(model.predict(np.expand_dims(rsimg,axis=0)))
         try:
-            print(pred)
-            # prediction = str(model.predict(rsimg.reshape(1, -1))[0])
-            res = "Prediction : The given image is "+labels[pred]
+            res = ""+labels[pred]
             return render_template("prediction.html",text=res)
         except Exception as e:
             print("can not able to resize the image :(")
-            return "can not able to resize the image :("
+            return "can not able to resize the image :( "+e
 
     else:
         return render_template("home.html")
